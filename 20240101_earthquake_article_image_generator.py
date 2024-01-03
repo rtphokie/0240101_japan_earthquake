@@ -1,5 +1,8 @@
+import pickle
 import unittest
 
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
 from obspy import UTCDateTime
 from obspy import read
@@ -20,28 +23,20 @@ stations = {'Nagano, Japan': {'network': 'IU', 'station': 'MAJO', 'channel': 'BH
                               },
             }
 
+t = UTCDateTime(2024, 1, 1, 7, 8, 0)  # start point for waveform charts
 
-class MyTestCase(unittest.TestCase):
+
+class TestCases(unittest.TestCase):
     def test_iris(self):
         st = read()  # load example seismogram
         st.filter(type='highpass', freq=3.0)
         st = st.select(component='Z')
         st.plot()
 
-    def test_iris_mtcarmel(self):
-
-        t = UTCDateTime(2024, 1, 1, 7, 8, 0)
+    def test_iris_waveforms(self):
         seconds = 1700
-        lon = -78.64
-        lat = 35.78
 
         client = Client("IRIS")
-        # inventory = client.get_stations(
-        #     starttime=t - 100, endtime=t + 100,
-        #     longitude=lon, latitude=lat, maxradius=1,
-        #     matchtimeseries=None)
-        # print(inventory)
-        import pickle
 
         fig = plt.figure(figsize=(16, 9))
 
@@ -89,24 +84,16 @@ class MyTestCase(unittest.TestCase):
 
         plt.tight_layout()
         plt.axis('off')
-        # plt.yticks([])
         plt.legend()
 
-        filename = f"images/{label.replace(' ', '_')}"
-        filename = 'images/foo'
-
+        filename = 'images/waveforms.png'
         plt.savefig(filename, dpi=300)
 
-
-
     def test_map(self):
-        import cartopy.crs as ccrs
-        import cartopy.feature as cfeature
-        import matplotlib.pyplot as plt
 
         fig = plt.figure(figsize=(12, 7))
 
-        # this declares a recentered projection for Pacific areas
+        # recenter projection on the Pacific
         usemap_proj = ccrs.PlateCarree(central_longitude=180)
         usemap_proj._threshold /= 20.  # to make greatcircle smooth
 
@@ -117,31 +104,21 @@ class MyTestCase(unittest.TestCase):
         geodetic = ccrs.Geodetic()
         plate_carree = ccrs.PlateCarree(central_longitude=180)
 
-        # Japan info
-        lon_jap, lat_jap = 138.252930, 36.204823
-        # California info
-        lon_cal, lat_cal = -119.417931, 36.778259
-
-        # Plot map markers for Japan and California
+        # Plot map markers for stations
         for station_name, station_data in stations.items():
             ax.plot(station_data['lng'], station_data['lat'], markersize=10, marker='o',
                     color=station_data['color'], transform=ccrs.PlateCarree())
 
         # plot greatcircle arc
-        gcc = ax.plot([lon_jap, stations['Pittsboro, NC']['lng']], [lat_jap, stations['Pittsboro, NC']['lat']],
+        gcc = ax.plot([stations['Nagano, Japan']['lng'], stations['Pittsboro, NC']['lng']], [stations['Nagano, Japan']['lng'], stations['Pittsboro, NC']['lat']],
                       color='black', transform=ccrs.Geodetic())
 
         ax.add_feature(cfeature.LAND, color='lightgray')
-        # ax.add_feature(cfeature.OCEAN)
-        # ax.add_feature(cfeature.COASTLINE)
-        # ax.add_feature(cfeature.BORDERS, linestyle=':')
-        # plot grid lines
-        # ax.gridlines(draw_labels=True, crs=ccrs.PlateCarree(), color='gray', linewidth=0.3)
+
         filename = "images/map.png"
         plt.tight_layout()
         plt.axis('off')
         plt.savefig(filename, dpi=300)
-
 
 
 if __name__ == '__main__':
