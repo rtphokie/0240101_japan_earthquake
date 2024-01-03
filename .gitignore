@@ -1,0 +1,4 @@
+/images/
+**.pickle
+.idea/
+.DS_Store
